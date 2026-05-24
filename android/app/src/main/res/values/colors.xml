@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirror of PramanaBackground in ui/theme/Color.kt for the system theme. -->
+    <color name="pramana_background">#FF0B0F14</color>
+    <color name="pramana_surface">#FF131A22</color>
+</resources>

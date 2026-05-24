@@ -1,0 +1,14 @@
+The .tflite drops here.
+
+Filenames expected by detection/TfliteRunner via PramanaApp:
+    pramana-int8.tflite      (primary — INT8 quantized)
+    pramana-int4.tflite      (secondary — INT4 quantized, if Workbench produced one)
+
+How to produce:
+    1. Train PyTorch model (ml/src/train.py).
+    2. Run ml/src/workbench/compile.py + quantize.py + profile.py against
+       AI Hub Workbench using your QAI_HUB_API_TOKEN.
+    3. Workbench returns a .tflite per quant tier. Drop them here.
+
+The runner falls back to the mock detector if no .tflite is present, so
+the app is fully runnable on the iQOO Z5 without a trained model.

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pramāṇa</string>
+
+    <!-- Permission rationales -->
+    <string name="perm_camera_rationale">Pramāṇa needs camera access to detect deepfakes and seal genuine captures. Nothing is uploaded.</string>
+    <string name="perm_media_rationale">To verify a file from your gallery, Pramāṇa needs read access to media. The file is processed entirely on-device.</string>
+
+    <!-- Verdict labels -->
+    <string name="verdict_genuine">GENUINE</string>
+    <string name="verdict_suspicious">SUSPICIOUS</string>
+    <string name="verdict_fake">FAKE</string>
+
+    <!-- Verify badges -->
+    <string name="verify_original">VERIFIED ORIGINAL</string>
+    <string name="verify_modified">VERIFIED BUT MODIFIED</string>
+    <string name="verify_broken">BROKEN SEAL</string>
+    <string name="verify_none">NO PROVENANCE</string>
+    <string name="verify_unreadable">UNREADABLE</string>
+
+    <!-- Buttons -->
+    <string name="action_verify">Verify file</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_back">Back</string>
+    <string name="action_pick_image">Pick an image</string>
+</resources>

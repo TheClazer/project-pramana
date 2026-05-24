@@ -1,0 +1,96 @@
+# =============================================================================
+# Pramāṇa — .gitignore
+# Covers: Android (Gradle/Studio), Python/ML, datasets, models, secrets
+# =============================================================================
+
+# ----- Android / Gradle / Android Studio ----------------------------------
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/app/debug/
+android/captures/
+android/.idea/
+android/.cxx/
+android/local.properties
+android/**/build/
+android/.kotlin/
+
+# Generated Compose / KSP / KAPT
+android/**/generated/
+android/**/intermediates/
+
+# Android Studio profiles
+*.iml
+.idea/
+
+# Gradle wrapper download (keep gradlew + gradle-wrapper.jar, ignore caches)
+.gradle/
+
+# ----- Keys / Secrets ------------------------------------------------------
+# DO NOT commit any signing keys or AI Hub tokens
+*.keystore
+*.jks
+keystore.properties
+google-services.json
+secrets.properties
+.env
+.env.local
+qai_hub_token
+ai_hub_token
+
+# ----- Datasets / Models ---------------------------------------------------
+# Datasets are HUGE — keep them out of git
+ml/datasets/
+ml/data_cache/
+ml/checkpoints/
+ml/runs/
+ml/wandb/
+ml/.cache/
+*.pt
+*.pth
+*.onnx
+*.tflite
+!android/app/src/main/assets/*.tflite.placeholder
+# (we keep a placeholder file so Android knows where to drop the real model)
+
+# Extracted PDF text (we have the source PDF on Desktop; bible.md is the canonical)
+pramana_extracted.txt
+
+# ----- Python --------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ----- IDE / OS ------------------------------------------------------------
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- Logs / Tmp ----------------------------------------------------------
+*.log
+*.tmp
+*.bak
+tmp/
+logs/
+
+# ----- Test outputs --------------------------------------------------------
+test-output/
+test_output/
+tools/cli_sealverify/output/

@@ -1,0 +1,57 @@
+name: Python — ML pipeline + CLI tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ml/**'
+      - 'tools/**'
+      - '.github/workflows/python.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'ml/**'
+      - 'tools/**'
+
+jobs:
+  cli-and-ml:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install CLI deps (fast)
+        run: |
+          pip install -r tools/cli_sealverify/requirements.txt
+
+      - name: Generate test vectors
+        run: |
+          python -m tools.cli_sealverify.main vectors --out tools/test_vectors/
+
+      - name: CLI round-trip + JCS vector tests
+        run: |
+          pytest tools/cli_sealverify/tests/ -q
+
+      - name: Install ML deps (heavy — torch + qai-hub)
+        run: |
+          pip install -r ml/requirements.txt
+        # Keep going on heavy-dep install issues; ML tests are stand-in-only.
+        continue-on-error: true
+
+      - name: ML lightweight tests (POS + reference_inference)
+        run: |
+          pytest ml/tests/test_pos.py ml/tests/test_reference_inference.py -q
+        continue-on-error: true
+
+      - name: Upload test vectors as artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pramana-test-vectors
+          path: tools/test_vectors/

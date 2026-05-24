@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bible Section 1: no telemetry, no cloud. We disable auto-backup outright —
+  the trust store and Keystore key live on the device and should never
+  silently sync to Google Drive.
+-->
+<full-backup-content/>

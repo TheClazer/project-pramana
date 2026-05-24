@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Compose owns the styling at runtime via PramanaTheme; this AppCompat-style
+      theme exists only so the manifest's android:theme reference resolves and
+      the splash window doesn't flash white.
+
+      Status bar: deep navy matching the Compose background (PramanaBackground
+      #0B0F14). Translucent so the camera preview can extend under it.
+    -->
+    <style name="Theme.Pramana" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#000B0F14</item>
+        <item name="android:navigationBarColor">#FF0B0F14</item>
+        <item name="android:windowBackground">@color/pramana_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pramāṇa launcher foreground.
+  Stylized seal / shield mark using vector. Designer pass for hackathon day
+  can drop in a polished asset; this works as a defensible placeholder.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Shield outline -->
+    <path
+        android:pathData="M54,18 L82,30 L82,58 C82,74 70,84 54,90 C38,84 26,74 26,58 L26,30 Z"
+        android:strokeColor="#7DD3FC"
+        android:strokeWidth="3"
+        android:fillColor="#0B0F14"/>
+    <!-- Inner checkmark / pramāṇa glyph -->
+    <path
+        android:pathData="M40,56 L50,66 L70,42"
+        android:strokeColor="#22C55E"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>
