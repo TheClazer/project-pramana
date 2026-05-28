@@ -1,0 +1,21 @@
+{
+  "captured_at": "1718368472103",
+  "device_fingerprint": "abababababababababababababababababababababababababababababababab",
+  "sensor": {
+    "model": "iQOO Z5",
+    "iso": "100",
+    "exposure_us": "8333",
+    "focal_length_mm": "4.38"
+  },
+  "content_hash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+  "detection": {
+    "score": "0.04",
+    "label": "GENUINE",
+    "model": "pramana-mobilenet-v3-small-int8-v1",
+    "backend": "NPU"
+  },
+  "key_id": "346bca9c55070f5462e6e7fde8795ff4abf18c5a4dfaaded59ff173c0a01bdf0",
+  "signature": "",
+  "version": "1.0",
+  "generator": "Pramana/1.0"
+}

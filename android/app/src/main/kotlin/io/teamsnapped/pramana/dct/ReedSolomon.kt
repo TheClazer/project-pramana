@@ -62,9 +62,9 @@ internal object ReedSolomon {
         for (b in data) {
             val factor = (b.toInt() and 0xff) xor parity[0]
             for (i in 0 until eccLen - 1) {
-                parity[i] = parity[i + 1] xor gfMul(factor, gen[gen.size - 2 - i])
+                parity[i] = parity[i + 1] xor gfMul(factor, gen[i + 1])
             }
-            parity[eccLen - 1] = gfMul(factor, gen[0])
+            parity[eccLen - 1] = gfMul(factor, gen[eccLen])
         }
         val out = ByteArray(data.size + eccLen)
         System.arraycopy(data, 0, out, 0, data.size)

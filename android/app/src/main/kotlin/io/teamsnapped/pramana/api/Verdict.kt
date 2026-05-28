@@ -15,29 +15,6 @@ package io.teamsnapped.pramana.api
  */
 enum class VerdictLabel { GENUINE, SUSPICIOUS, FAKE }
 
-/**
- * One frame of input to the detection pipeline.
- *
- * `rgb` is **packed 8-bit RGB** (3 bytes per pixel, row-major, no padding).
- * If the source format is YUV (CameraX `YUV_420_888`) the camera engine
- * converts in-place into a pre-allocated buffer before calling `analyze()`.
- *
- * Bible Section 9 engineering rule: zero allocations in the per-frame path.
- * The same [FrameInput] instance is reused across frames where possible —
- * callers must NOT hold onto the underlying ByteArray past the analyze() call.
- */
-data class FrameInput(
-    val rgb: ByteArray,
-    val width: Int,
-    val height: Int,
-    val timestampNs: Long
-) {
-    // Generated equals/hashCode on a ByteArray-bearing data class is wrong;
-    // provide identity-based equality to avoid expensive O(n) comparisons in
-    // hot paths.
-    override fun equals(other: Any?): Boolean = this === other
-    override fun hashCode(): Int = System.identityHashCode(this)
-}
 
 /**
  * The output of [DetectionEngine.analyze].

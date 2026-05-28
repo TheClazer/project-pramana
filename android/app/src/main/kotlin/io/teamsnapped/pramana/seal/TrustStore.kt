@@ -38,10 +38,12 @@ class TrustStore(context: Context) {
     /** Resolve a key by `manifest.keyId`. */
     fun lookup(keyId: String): PublicKey? {
         if (!file.exists()) return null
+        var result: PublicKey? = null
         file.forEachLine { line ->
+            if (result != null) return@forEachLine
             val parts = line.split("\t")
             if (parts.size == 3 && parts[0] == keyId) {
-                return try {
+                result = try {
                     val keyBytes = Base64.getDecoder().decode(parts[1])
                     val spec = X509EncodedKeySpec(keyBytes)
                     val algo = when (parts[2]) {
@@ -56,7 +58,7 @@ class TrustStore(context: Context) {
                 }
             }
         }
-        return null
+        return result
     }
 
     companion object { private const val TAG = "Pramana.TrustStore" }

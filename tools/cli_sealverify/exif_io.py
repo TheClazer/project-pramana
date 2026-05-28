@@ -9,6 +9,7 @@ import base64
 from pathlib import Path
 
 import piexif
+import piexif.helper
 
 PREFIX = "PMNA1:"
 

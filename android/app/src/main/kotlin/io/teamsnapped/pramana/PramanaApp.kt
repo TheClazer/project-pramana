@@ -74,7 +74,7 @@ class PramanaApp : Application() {
             Log.e(tag, "Keystore provisioning failed: ${t.message}")
         }
 
-        rppgStream = try { RealRppgStream() } catch (t: Throwable) {
+        rppgStream = try { RealRppgStream(this) } catch (t: Throwable) {
             Log.w(tag, "RealRppgStream failed, using mock: ${t.message}"); MockRppgStream()
         }
 

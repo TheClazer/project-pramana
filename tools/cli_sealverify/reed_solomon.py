@@ -50,8 +50,8 @@ def encode(data: bytes, ecc_len: int) -> bytes:
     for byte in data:
         factor = byte ^ parity[0]
         for i in range(ecc_len - 1):
-            parity[i] = parity[i + 1] ^ _gf_mul(factor, gen[len(gen) - 2 - i])
-        parity[ecc_len - 1] = _gf_mul(factor, gen[0])
+            parity[i] = parity[i + 1] ^ _gf_mul(factor, gen[i + 1])
+        parity[ecc_len - 1] = _gf_mul(factor, gen[ecc_len])
     return bytes(data) + bytes(parity)
 
 

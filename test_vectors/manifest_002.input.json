@@ -1,0 +1,21 @@
+{
+  "captured_at": "1700000000000",
+  "device_fingerprint": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sensor": {
+    "model": "Snapdragon-DevBoard",
+    "iso": "200",
+    "exposure_us": "16666",
+    "focal_length_mm": "5.0"
+  },
+  "content_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "detection": {
+    "score": "0.92",
+    "label": "FAKE",
+    "model": "pramana-efficientnet-b0-int8-v1",
+    "backend": "GPU"
+  },
+  "key_id": "346bca9c55070f5462e6e7fde8795ff4abf18c5a4dfaaded59ff173c0a01bdf0",
+  "signature": "",
+  "version": "1.0",
+  "generator": "Pramana/1.0"
+}

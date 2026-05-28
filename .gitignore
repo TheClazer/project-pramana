@@ -94,3 +94,8 @@ logs/
 test-output/
 test_output/
 tools/cli_sealverify/output/
+
+# ----- Local Dev / Virtual Env / Binaries ---------------------------------
+test_env/
+pramana-debug.apk
+

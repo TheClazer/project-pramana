@@ -148,13 +148,14 @@ dependencies {
     // -- TFLite + delegates ----------------------------------------------
     implementation(libs.tflite)
     implementation(libs.tflite.gpu)
+    implementation(libs.tflite.gpu.api)
     implementation(libs.tflite.gpu.delegate.plugin)
     implementation(libs.tflite.support)
 
     // QNN TFLite Delegate — local AAR drop-in. The settings.gradle.kts already
     // registers flatDir { dirs("app/libs") }. The file is gitignored; see
     // setup-checklist.md for download instructions.
-    // implementation(files("libs/qnn-tflite-delegate.aar"))   // <-- uncomment when AAR present
+    implementation(files("libs/qnn-tflite-delegate.aar"))   // <-- uncomment when AAR present
 
     // -- MediaPipe Face Mesh (rPPG ROIs) ---------------------------------
     implementation(libs.mediapipe.tasks.vision)
