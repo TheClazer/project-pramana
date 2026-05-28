@@ -57,18 +57,27 @@ internal object ReedSolomon {
      */
     fun encode(data: ByteArray, eccLen: Int): ByteArray {
         require(data.size + eccLen <= 255) { "RS(n=255) — data + ecc must fit in 255 bytes" }
-        val gen = generator(eccLen)
-        val parity = IntArray(eccLen)
-        for (b in data) {
-            val factor = (b.toInt() and 0xff) xor parity[0]
-            for (i in 0 until eccLen - 1) {
-                parity[i] = parity[i + 1] xor gfMul(factor, gen[gen.size - 2 - i])
+        val gen = generator(eccLen)            // monic, gen[0] == 1, length eccLen + 1
+
+        // Systematic encoding by synthetic polynomial division of
+        // data(x)·x^eccLen by gen(x). The remainder is the parity; appending
+        // it makes the whole codeword divisible by gen(x), so every syndrome
+        // (evaluation at gen's roots α^0..α^(eccLen-1)) is zero.
+        val res = IntArray(data.size + eccLen)
+        for (i in data.indices) res[i] = data[i].toInt() and 0xff
+        for (i in data.indices) {
+            val coef = res[i]
+            if (coef != 0) {
+                // gen[0] is the monic leading 1 — skip it; subtract coef·gen
+                // from the trailing coefficients.
+                for (j in 1 until gen.size) {
+                    res[i + j] = res[i + j] xor gfMul(gen[j], coef)
+                }
             }
-            parity[eccLen - 1] = gfMul(factor, gen[0])
         }
         val out = ByteArray(data.size + eccLen)
         System.arraycopy(data, 0, out, 0, data.size)
-        for (i in 0 until eccLen) out[data.size + i] = parity[i].toByte()
+        for (i in 0 until eccLen) out[data.size + i] = res[data.size + i].toByte()
         return out
     }
 
