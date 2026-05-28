@@ -45,14 +45,19 @@ def _generator(ecc_len: int) -> list[int]:
 
 def encode(data: bytes, ecc_len: int) -> bytes:
     assert len(data) + ecc_len <= 255
-    gen = _generator(ecc_len)
-    parity = [0] * ecc_len
-    for byte in data:
-        factor = byte ^ parity[0]
-        for i in range(ecc_len - 1):
-            parity[i] = parity[i + 1] ^ _gf_mul(factor, gen[i + 1])
-        parity[ecc_len - 1] = _gf_mul(factor, gen[ecc_len])
-    return bytes(data) + bytes(parity)
+    gen = _generator(ecc_len)            # monic, gen[0] == 1, length ecc_len + 1
+
+    # Systematic encoding by synthetic polynomial division of
+    # data(x)*x^ecc_len by gen(x). The remainder is the parity; appending it
+    # makes the codeword divisible by gen(x), so every syndrome is zero.
+    res = list(data) + [0] * ecc_len
+    for i in range(len(data)):
+        coef = res[i]
+        if coef != 0:
+            # gen[0] is the monic leading 1 — skip it.
+            for j in range(1, len(gen)):
+                res[i + j] ^= _gf_mul(gen[j], coef)
+    return bytes(data) + bytes(res[len(data):])
 
 
 def is_intact(codeword: bytes, ecc_len: int) -> bool:
