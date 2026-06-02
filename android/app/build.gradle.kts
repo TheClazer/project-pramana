@@ -32,6 +32,11 @@ android {
         // Model id used in manifest's detection.model field. Engineer A bumps this
         // when delivering a new tflite drop.
         buildConfigField("String", "DETECTION_MODEL_ID", "\"pramana-mobilenet-v3-small-int8-v1\"")
+
+        // Startup backend preference for the TFLite runner: AUTO | NPU | GPU | CPU.
+        // AUTO = the QNN(HTP)->GPU->CPU ladder. The live demo flips this at runtime
+        // (Settings) for the NPU-vs-CPU latency A/B; this is only the initial value.
+        buildConfigField("String", "FORCE_BACKEND", "\"AUTO\"")
     }
 
     buildTypes {

@@ -74,7 +74,8 @@ fun PramanaApp_UIRoot(
                 is Screen.Settings -> SettingsScreen(
                     backendLabel = cameraEngine.backend(),
                     onBack = { nav.back() },
-                    sealEngine = sealEngine
+                    sealEngine = sealEngine,
+                    detectionEngine = detectionEngine
                 )
             }
         }

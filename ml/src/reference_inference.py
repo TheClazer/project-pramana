@@ -22,10 +22,12 @@ from pathlib import Path
 from typing import Tuple
 
 import numpy as np
-import torch
 from PIL import Image
 
-from .models.backbones import PramanaClassifier
+# NOTE: torch + timm (via models.backbones) are imported LAZILY inside the
+# functions that need them. `preprocess()` and `softmax_fake_score()` — the
+# cross-language preprocessing contract the Android side mirrors — depend only
+# on numpy + PIL, so the contract is checkable without the training stack.
 
 TARGET_SIZE = 224
 
@@ -51,8 +53,9 @@ def softmax_fake_score(logits: np.ndarray) -> float:
     return float(p[0, 1])
 
 
-def run_pytorch(model: PramanaClassifier, image: Image.Image) -> Tuple[float, np.ndarray]:
-    """Returns (fake_score, raw_logits)."""
+def run_pytorch(model, image: Image.Image) -> Tuple[float, np.ndarray]:
+    """Returns (fake_score, raw_logits). `model` is a PramanaClassifier (torch)."""
+    import torch  # lazy — keeps the preprocessing contract torch-free
     x = torch.from_numpy(preprocess(image))
     model.eval()
     with torch.no_grad():
@@ -71,6 +74,8 @@ def _cli() -> None:
                     help="write the preprocessed tensor + logits as JSON for Android comparison")
     args = ap.parse_args()
 
+    import torch  # lazy
+    from .models.backbones import PramanaClassifier  # lazy (pulls in timm)
     model = PramanaClassifier(backbone=args.backbone, pretrained=False)
     if args.checkpoint is not None:
         state = torch.load(args.checkpoint, map_location="cpu")

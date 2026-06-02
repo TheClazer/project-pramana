@@ -31,6 +31,12 @@ internal object PreprocessIntoTensor {
      */
     fun run(frame: FrameInput, out: ByteBuffer) {
         val w = frame.width; val h = frame.height
+        // Defensive: the center-crop math assumes a frame at least TARGET on its
+        // short side. Camera analysis frames (640x480+) and gallery decodes always
+        // satisfy this; guard so a pathological tiny input fails loudly, not via OOB.
+        require(w >= TARGET && h >= TARGET) {
+            "frame too small for preprocessing: ${w}x$h (need >= ${TARGET}x$TARGET)"
+        }
         val side = minOf(w, h)
         val ox = (w - side) / 2
         val oy = (h - side) / 2

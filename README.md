@@ -30,7 +30,7 @@ An Android app that does two things, and means both:
 
 1. **It spots fakes.** Point the camera at someone, or open a photo from your gallery, and Pramāṇa tells you in real time whether it's real or AI-generated. Inference runs on the **Snapdragon Hexagon NPU** via the QNN TFLite Delegate. A second CPU-side check — **rPPG cardiac liveness** — listens for the subject's pulse signal in the captured pixels. A deepfake played back on a monitor has no pulse. We catch it.
 
-2. **It proves what's real.** When you tap the shutter, Pramāṇa SHA-256s the pixels, signs the manifest with an **ECDSA-P256 key sealed inside Android Keystore (StrongBox)**, embeds the signed manifest in EXIF, *and* paints an invisible **DCT pixel watermark** across the image. EXIF gets stripped by WhatsApp? The watermark survives. Pixels get edited? The hash mismatches. The seal is two-layered by design.
+2. **It proves what's real.** When you tap the shutter, Pramāṇa SHA-256s the pixels, signs the manifest with an **ECDSA-P256 key sealed inside Android Keystore (StrongBox)**, embeds the signed manifest in EXIF, *and* paints an invisible **DCT pixel watermark** across the image. Strip the EXIF? The watermark survives JPEG re-encoding and recompression down to ~q60 at the same resolution (majority-voted across redundant blocks — empirically tested), so the fingerprint is still recoverable. Pixels edited? The hash mismatches. The seal is two-layered by design.
 
 Everything happens on the device. The app does not hold the `INTERNET` permission.
 
@@ -41,7 +41,7 @@ Everything happens on the device. The app does not hold the `INTERNET` permissio
 |  | Conventional deepfake tool | **Pramāṇa** |
 |---|---|---|
 | Filming a deepfake played on a monitor | Often fooled | **Caught** — rPPG sees no pulse |
-| Original photo, EXIF stripped by WhatsApp | "No metadata, no provenance" | **DCT watermark survives**; verifier finds the fingerprint |
+| Original photo, EXIF stripped + recompressed (same resolution) | "No metadata, no provenance" | **DCT watermark survives to ~q60**; verifier finds the fingerprint (a downscale still defeats it → EXIF manifest is the primary channel) |
 | Server-side detection | "Send us your photos" | **Runs on the phone.** No `INTERNET` permission |
 | Adversarial fake from a 2027 diffusion model | Accuracy drops to coin-flip | Accuracy drops *and* the provenance half still works |
 | INT4 / INT8 deployment for the chip | Maybe one variant | **Both shipped**, both profiled on real Snapdragon hardware |
@@ -59,7 +59,7 @@ Everything happens on the device. The app does not hold the `INTERNET` permissio
 | Fusion | Weighted score + 2-second hard-veto | Bible §6 |
 | Crypto | **ECDSA-P256** in **StrongBox** → TEE → RSA | Universal, hardware-rooted, no soft keystore ever |
 | Manifest | C2PA-shaped JSON, **RFC 8785 JCS** canonicalized | Byte-identical bytes across Sealer ↔ Verifier |
-| Watermark | 8×8 block DCT + **Reed-Solomon GF(256)** | Survives JPEG-q70, screenshots, WhatsApp re-encode |
+| Watermark | 8×8 block DCT + **Reed-Solomon GF(256)** + redundant blocks/majority-vote | Survives JPEG recompression to ~q60 (same-res), screenshots, EXIF stripping — empirically tested in CI |
 | Camera | CameraX `ImageAnalysis` (YUV_420_888, **zero per-frame alloc**) | 30 fps on a mid-tier Snapdragon |
 | UI | Jetpack **Compose** Material 3, dark-first | One codebase, all five screens |
 | Tests | JUnit + Truth (Kotlin) · pytest (Python) | DCT round-trip, JCS vectors, hard-veto rule, POS pulse, RS detection |

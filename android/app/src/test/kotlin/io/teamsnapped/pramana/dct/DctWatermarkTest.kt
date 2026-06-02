@@ -6,9 +6,10 @@ import kotlin.random.Random
 
 class DctWatermarkTest {
 
-    /** Smallest image that fits 384 codeword bits (384 8×8 blocks). */
-    private val w = 200
-    private val h = 200   // 25*25 = 625 blocks ≥ 384
+    // Large enough to exercise adaptive redundancy (R > 1). 512x384 = 64x48 =
+    // 3072 blocks / 384 = R=8, so each bit is majority-voted across 8 copies.
+    private val w = 512
+    private val h = 384
 
     @Test
     fun `embed then extract recovers payload exactly`() {
@@ -17,8 +18,21 @@ class DctWatermarkTest {
         DctWatermark.embed(y, w, h, payload)
         val extracted = DctWatermark.extract(y, w, h)
         assertThat(extracted).isInstanceOf(DctWatermark.Extracted.Found::class.java)
-        val found = extracted as DctWatermark.Extracted.Found
-        assertThat(found.payload).isEqualTo(payload)
+        assertThat((extracted as DctWatermark.Extracted.Found).payload).isEqualTo(payload)
+    }
+
+    @Test
+    fun `redundancy majority-vote recovers from moderate per-pixel noise`() {
+        val y = FloatArray(w * h) { 128f + Random(3L).nextFloat() * 40f }
+        val payload = ByteArray(32) { (0xA5 xor it).toByte() }
+        DctWatermark.embed(y, w, h, payload)
+        // Moderate noise (~±10/px) — below the QIM margin; the 8-way majority
+        // vote must still recover the payload exactly. This is the redundancy win.
+        val rng = Random(4L)
+        for (i in y.indices) y[i] = (y[i] + (rng.nextFloat() - 0.5f) * 20f).coerceIn(0f, 255f)
+        val result = DctWatermark.extract(y, w, h)
+        assertThat(result).isInstanceOf(DctWatermark.Extracted.Found::class.java)
+        assertThat((result as DctWatermark.Extracted.Found).payload).isEqualTo(payload)
     }
 
     @Test
@@ -32,32 +46,27 @@ class DctWatermarkTest {
 
     @Test
     fun `extract on a clean luminance image reports None`() {
-        // Clean image, no embedded bits — should NOT report a Found.
-        // (May report None if all bits decode as 0; that's the expected case.)
         val y = FloatArray(w * h) { 128f }
         val result = DctWatermark.extract(y, w, h)
         assertThat(result).isInstanceOf(DctWatermark.Extracted.None::class.java)
     }
 
     @Test
-    fun `embed then heavy noise recovers as damaged not found`() {
+    fun `embed then destructive noise does not produce a false Found`() {
         val y = FloatArray(w * h) { 128f + Random(1L).nextFloat() * 20f }
         val payload = ByteArray(32) { 0x5A }
         DctWatermark.embed(y, w, h, payload)
-
-        // Inject heavy gaussian-ish noise (more than DELTA*0.5 per coef)
+        // Destructive noise (~±60/px) well beyond the QIM margin — must NOT yield
+        // a spurious valid payload (RS would have to accidentally validate garbage).
         val rng = Random(2L)
-        for (i in y.indices) y[i] = (y[i] + (rng.nextFloat() - 0.5f) * 30f).coerceIn(0f, 255f)
-
+        for (i in y.indices) y[i] = (y[i] + (rng.nextFloat() - 0.5f) * 120f).coerceIn(0f, 255f)
         val result = DctWatermark.extract(y, w, h)
-        // Either Damaged or None — but never a spurious Found with this much noise.
         assertThat(result).isNotInstanceOf(DctWatermark.Extracted.Found::class.java)
     }
 
     @Test
     fun `image too small reports None on extract`() {
-        // 10x10 image = 1 block, far below CODEWORD_BITS.
-        val y = FloatArray(10 * 10) { 128f }
+        val y = FloatArray(8 * 8) { 128f }
         val result = DctWatermark.extract(y, 8, 8)
         assertThat(result).isInstanceOf(DctWatermark.Extracted.None::class.java)
     }

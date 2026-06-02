@@ -34,6 +34,12 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
+    <!-- Pre-Android-10 only: MediaStore DATA-path writes need this. Scoped storage
+         (API 29+) does NOT, so it's capped at API 28. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
     <!-- StrongBox feature hint (informational only — code handles absence) -->
     <uses-feature
         android:name="android.hardware.strongbox_keystore"

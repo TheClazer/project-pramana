@@ -43,6 +43,15 @@ class RealRppgStream(
     private val fft = FloatFFT_1D(windowFrames.toLong())
     private var landmarker: FaceLandmarker? = null
 
+    // --- MediaPipe hot-path discipline (bible §9: zero per-frame allocation) ---
+    // One reused direct buffer for the MPImage wrapper; full face-mesh detection is
+    // throttled — landmarks barely move frame-to-frame, so we re-detect every Nth
+    // frame and keep the cached ROIs in between. This keeps the 30 fps analyzer loop
+    // from being dragged down by a ~10-30 ms face-mesh inference on every frame.
+    private var mpBuffer: ByteBuffer? = null
+    private var frameCounter = 0
+    private val detectEveryN = 10
+
     init {
         if (context != null) {
             try {
@@ -85,14 +94,17 @@ class RealRppgStream(
     private val roiHalf = 8
 
     override fun pushFrame(rgb: ByteArray, width: Int, height: Int, timestampNs: Long) {
+        frameCounter++
         val lm = landmarker
-        if (lm != null) {
+        // Run the (expensive) face-mesh only every Nth frame; reuse the direct buffer.
+        if (lm != null && frameCounter % detectEveryN == 0) {
             try {
-                // Wrap the RGB ByteArray in direct ByteBuffer
-                val buffer = ByteBuffer.allocateDirect(rgb.size)
+                val buffer = (mpBuffer?.takeIf { it.capacity() >= rgb.size }
+                    ?: ByteBuffer.allocateDirect(rgb.size).also { mpBuffer = it })
+                buffer.clear()
                 buffer.put(rgb)
                 buffer.rewind()
-                
+
                 val mpImage = ByteBufferImageBuilder(buffer, width, height, MPImage.IMAGE_FORMAT_RGB).build()
                 try {
                     val result = lm.detect(mpImage)
@@ -199,7 +211,7 @@ class RealRppgStream(
     }
 
     override fun reset() {
-        head = 0; filled = 0
+        head = 0; filled = 0; frameCounter = 0
         rBuf.fill(0f); gBuf.fill(0f); bBuf.fill(0f)
     }
 }

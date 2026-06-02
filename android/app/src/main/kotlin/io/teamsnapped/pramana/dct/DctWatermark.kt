@@ -38,11 +38,26 @@ object DctWatermark {
     const val CODEWORD_BITS = CODEWORD_BYTES * 8         // 384
 
     /**
-     * Per-bit DCT coefficient delta. Larger = more robust to JPEG quant,
-     * but visible artifacts above ~20 in 8-bit luminance. 12 is the sweet
-     * spot for JPEG quality 70+ (the threshold the bible cites).
+     * Per-bit QIM step. Must exceed the JPEG quantization step at q60-70 to
+     * survive recompression. 28 keeps PSNR ~40 dB (visually lossless) while
+     * surviving down to ~q60 at realistic capture sizes. MUST match the Python
+     * mirror in tools/cli_sealverify/dct_watermark.py.
      */
-    private const val DELTA = 12f
+    private const val DELTA = 28f
+
+    /**
+     * Each codeword bit is embedded into up to this many blocks; extract
+     * majority-votes. Redundancy adapts to image size (R = blocks / CODEWORD_BITS,
+     * clamped). A multi-megapixel capture gets large R -> survives heavy recompression.
+     * NOTE: survives RE-COMPRESSION at the same resolution; a RESIZE (e.g. WhatsApp
+     * downscaling a >1600px image) changes the block grid and defeats it — that's
+     * what the EXIF manifest is the primary channel for. Documented honestly.
+     */
+    private const val MAX_REDUNDANCY = 64
+
+    /** R = blocks / CODEWORD_BITS, clamped to [1, MAX_REDUNDANCY]. Deterministic from dims. */
+    private fun redundancy(blocksX: Int, blocksY: Int): Int =
+        ((blocksX * blocksY) / CODEWORD_BITS).coerceIn(1, MAX_REDUNDANCY)
 
     // ------------------------------------------------------------------ //
     //  Public payload helpers
@@ -93,10 +108,15 @@ object DctWatermark {
             "image too small for watermark: need >= $CODEWORD_BITS 8x8 blocks, have ${blocksX*blocksY}"
         }
 
+        val r = redundancy(blocksX, blocksY)
+        val total = CODEWORD_BITS * r
+        val k = DctMath.ZIGZAG[DctMath.EMBED_ZIGZAG_INDEX]
+        val q = 2 * DELTA
         val block = FloatArray(64)
-        for (bit in 0 until CODEWORD_BITS) {
-            val bx = bit % blocksX
-            val by = bit / blocksX
+        for (slot in 0 until total) {
+            val bit = slot % CODEWORD_BITS           // interleaved: a bit's copies are 384 slots apart
+            val bx = slot % blocksX
+            val by = slot / blocksX
             readBlock(y, width, bx, by, block)
             DctMath.dct(block)
 
@@ -104,20 +124,11 @@ object DctWatermark {
             val bitInByte = 7 - (bit % 8)
             val want = (codeword[byteIdx].toInt() shr bitInByte) and 1
 
-            // Quantize the mid-freq coefficient to ±DELTA depending on bit.
-            // QIM (quantization index modulation) — robust to JPEG.
-            val k = DctMath.ZIGZAG[DctMath.EMBED_ZIGZAG_INDEX]
-            val q = 2 * DELTA
             val cur = block[k]
-            // Snap to nearest grid multiple of (2*DELTA) shifted by ±DELTA/2.
             val target = if (want == 1) {
-                // odd multiple of DELTA (..., -3D, -D, +D, +3D, ...)
-                val n = Math.round((cur - DELTA) / q).toFloat()
-                n * q + DELTA
+                Math.round((cur - DELTA) / q).toFloat() * q + DELTA
             } else {
-                // even multiple of DELTA (..., -2D, 0, +2D, ...)
-                val n = Math.round(cur / q).toFloat()
-                n * q
+                Math.round(cur / q).toFloat() * q
             }
             block[k] = target
 
@@ -138,33 +149,38 @@ object DctWatermark {
         val blocksY = height / 8
         if (blocksX * blocksY < CODEWORD_BITS) return Extracted.None
 
+        val r = redundancy(blocksX, blocksY)
+        val total = CODEWORD_BITS * r
+        val k = DctMath.ZIGZAG[DctMath.EMBED_ZIGZAG_INDEX]
+        val q = 2 * DELTA
         val block = FloatArray(64)
-        val codeword = ByteArray(CODEWORD_BYTES)
-        var anyNonzero = false
+        val votes = IntArray(CODEWORD_BITS)        // count of '1' reads per bit
 
-        for (bit in 0 until CODEWORD_BITS) {
-            val bx = bit % blocksX
-            val by = bit / blocksX
+        for (slot in 0 until total) {
+            val bit = slot % CODEWORD_BITS
+            val bx = slot % blocksX
+            val by = slot / blocksX
             readBlock(y, width, bx, by, block)
             DctMath.dct(block)
 
-            val k = DctMath.ZIGZAG[DctMath.EMBED_ZIGZAG_INDEX]
             val coef = block[k]
-            // Recover bit: distance to nearest odd-grid vs even-grid.
-            val q = 2 * DELTA
             val toEven = abs(coef - Math.round(coef / q) * q)
             val toOdd  = abs(coef - (Math.round((coef - DELTA) / q) * q + DELTA))
-            val bitVal = if (toOdd < toEven) 1 else 0
-            if (bitVal == 1) anyNonzero = true
+            if (toOdd < toEven) votes[bit]++
+        }
 
-            val byteIdx = bit / 8
-            val bitInByte = 7 - (bit % 8)
-            if (bitVal == 1) {
+        val codeword = ByteArray(CODEWORD_BYTES)
+        var anyOne = false
+        for (bit in 0 until CODEWORD_BITS) {
+            if (votes[bit] * 2 > r) {              // strict majority of the R copies
+                val byteIdx = bit / 8
+                val bitInByte = 7 - (bit % 8)
                 codeword[byteIdx] = (codeword[byteIdx].toInt() or (1 shl bitInByte)).toByte()
+                anyOne = true
             }
         }
 
-        if (!anyNonzero) return Extracted.None
+        if (!anyOne) return Extracted.None
         return if (ReedSolomon.isIntact(codeword, ECC_BYTES)) {
             Extracted.Found(codeword.copyOfRange(0, PAYLOAD_BYTES))
         } else {

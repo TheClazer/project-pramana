@@ -213,7 +213,18 @@ private fun saveToMediaStore(ctx: android.content.Context, sealed: SealedFile): 
         put(MediaStore.Images.Media.DISPLAY_NAME, name)
         put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Scoped storage (API 29+): RELATIVE_PATH places it in Pictures/Pramana.
             put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Pramana")
+        } else {
+            // Pre-Android-10 (minSdk 28-29): MediaStore needs an explicit absolute
+            // DATA path + WRITE_EXTERNAL_STORAGE (declared maxSdk=28 in the manifest).
+            @Suppress("DEPRECATION")
+            val dir = java.io.File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                "Pramana"
+            ).apply { mkdirs() }
+            @Suppress("DEPRECATION")
+            put(MediaStore.Images.Media.DATA, java.io.File(dir, name).absolutePath)
         }
     }
     val resolver = ctx.contentResolver

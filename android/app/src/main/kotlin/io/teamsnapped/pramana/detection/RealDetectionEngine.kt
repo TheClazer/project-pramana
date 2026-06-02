@@ -37,8 +37,16 @@ class RealDetectionEngine(
     private val modelOutput: Array<FloatArray> = arrayOf(FloatArray(2))
 
     init {
-        runner.init()
+        runner.init(TfliteRunner.ForceBackend.parse(io.teamsnapped.pramana.BuildConfig.FORCE_BACKEND))
     }
+
+    /**
+     * Re-initialize the interpreter pinned to a single backend ("NPU"/"GPU"/"CPU"/"AUTO").
+     * Used by Settings for the live NPU-vs-CPU latency A/B demo. Returns the tier
+     * actually reached (honest — e.g. "GPU" if NPU was requested but HTP is unavailable).
+     */
+    override fun forceBackend(mode: String): String =
+        runner.init(TfliteRunner.ForceBackend.parse(mode))
 
     override suspend fun analyze(frame: FrameInput): Verdict {
         rppgStream.pushFrame(frame.rgb, frame.width, frame.height, frame.timestampNs)

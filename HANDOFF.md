@@ -273,5 +273,47 @@ descending order:
 If a unit test fails, that's the *good* signal — fix the math, don't
 fix the test. Tests are the cross-language pin.
 
+---
+
+## POST-AUDIT UPDATES (win-readiness pass)
+
+A second empirical audit found two headline claims were false-as-shipped and
+fixed them. Read this before the finale.
+
+### NPU is now real code — but you must bundle the HTP runtime libs (device-agnostic)
+- `detection/TfliteRunner.kt` now uses the REAL class `com.qualcomm.qti.QnnDelegate`
+  (the previous `QnnTfLiteDelegate` name was wrong → NPU silently never engaged).
+  Verified against the AAR via `javap`. No Hexagon version is pinned, so one APK
+  adapts to any Snapdragon (Z5 V68, Moto, the unknown loaner) via online graph prep.
+- **YOU must drop the QNN HTP runtime `.so`s** into `android/app/src/main/jniLibs/arm64-v8a/`
+  from the QNN SDK (Qualcomm AI Engine Direct): `libQnnHtp.so`, `libQnnSystem.so`,
+  and the skels `libQnnHtpV68Skel.so` (Z5), `V69`, `V73`, `V75` (+ the Moto's version).
+  The AAR ships only the delegate `.so`, NOT these. Without them `QnnDelegate(...)`
+  throws → app falls back to GPU/CPU (honestly labeled, no crash).
+- **Prove NPU on BOTH prep phones** (Z5 + Moto = two Hexagon versions) before the
+  finale → high confidence on the unseen loaner. Record a backup video in NPU mode.
+- **Demonstrate it's real:** Settings now has a live **AUTO/NPU/GPU/CPU** switch
+  (`BuildConfig.FORCE_BACKEND` is the startup default). Flip NPU→CPU on stage and
+  show the latency jump in the verdict HUD — the contrast is the proof. Plus the
+  AI Hub Workbench profile screenshot. `setCacheDir` is wired so first-load graph
+  prep is cached (no awkward pause).
+
+### Watermark now genuinely survives recompression — but NOT resize (honest)
+- `dct/DctWatermark.kt` + Python mirror: each bit is now embedded in R redundant
+  blocks (R scales with image size) and majority-voted on extract; delta raised to 28.
+- Empirically (CI test `test_dct_jpeg_survival.py`): survives JPEG re-encode down to
+  **~q60 at the same resolution**, PSNR ~40 dB (invisible). Was dying at q80 before.
+- It does **NOT** survive a downscale/resize (WhatsApp shrinks >1600px images). For
+  the WhatsApp demo: send a sealed image **already ≤ ~1600px** (WhatsApp then only
+  recompresses, no resize → watermark survives) or send as **Document**. Don't claim
+  resize-survival to judges — the EXIF manifest is the channel for that.
+
+### Other audit fixes (already applied)
+- rPPG: MediaPipe `detect()` throttled to every 10th frame + reused direct buffer
+  (was allocating ~900 KB and running face-mesh every frame → killed FPS).
+- MediaStore: added pre-API-29 (`DATA`-path) save + `WRITE_EXTERNAL_STORAGE`(maxSdk28).
+- `PreprocessIntoTensor` guards frames < 224px; verify-fallback treats tiny images as Unreadable.
+- `reference_inference.preprocess` no longer imports torch/timm (contract checkable standalone).
+
 All the best.
 — Claude

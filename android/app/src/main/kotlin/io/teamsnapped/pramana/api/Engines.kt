@@ -49,6 +49,14 @@ interface DetectionEngine {
     /** "NPU" | "GPU" | "CPU" | "MOCK" | "ERR". Surfaced in the UI HUD. */
     fun backend(): String
 
+    /**
+     * Re-initialize pinned to a single backend ("AUTO"|"NPU"|"GPU"|"CPU") and
+     * return the tier ACTUALLY reached. Used for the live NPU-vs-CPU latency A/B
+     * demo (bible: the strongest single proof the NPU is real). Default no-op for
+     * mocks — they just report their current backend.
+     */
+    fun forceBackend(mode: String): String = backend()
+
     /** Release native resources. Idempotent. */
     fun close()
 }

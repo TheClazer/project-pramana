@@ -139,6 +139,10 @@ class RealVerifyEngine(
     private suspend fun runDetectionFallback(bytes: ByteArray): VerifyResult {
         val bm = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             ?: return VerifyResult.Unreadable
+        // PreprocessIntoTensor requires >= 224 on each side. A gallery pick can be
+        // smaller (icons, thumbnails) — guard here so analyze() is never handed a
+        // sub-224 frame (it would otherwise throw). Treat tiny images as unreadable.
+        if (bm.width < 224 || bm.height < 224) { bm.recycle(); return VerifyResult.Unreadable }
         val pixelsInt = IntArray(bm.width * bm.height)
         bm.getPixels(pixelsInt, 0, bm.width, 0, 0, bm.width, bm.height)
         val rgb = ByteArray(bm.width * bm.height * 3)
