@@ -125,9 +125,14 @@ def discover_standin(_root: Path | None = None) -> list[Sample]:
 def build_dataset(
     dataset: str,
     root: Path = DEFAULT_ROOT,
-    seed: int = 0
+    seed: int = 0,
+    balance: bool = False,
 ) -> tuple[list[Sample], list[Sample]]:
-    """Returns (train, val) sample lists. 80/20 split, seeded."""
+    """Returns (train, val) sample lists. 80/20 split, seeded.
+
+    If `balance` is True, the majority class is randomly downsampled to match the
+    minority class count — important for Celeb-DF/FF++ which are heavily fake-skewed
+    (a model trained on imbalanced data just learns to always say 'fake')."""
     if dataset == "stand_in":
         all_samples = discover_standin()
     elif dataset == "combined":
@@ -156,6 +161,18 @@ def build_dataset(
         )
 
     rng = random.Random(seed)
+
+    if balance:
+        reals = [s for s in all_samples if s.label == 0]
+        fakes = [s for s in all_samples if s.label == 1]
+        n = min(len(reals), len(fakes))
+        if n == 0:
+            raise RuntimeError(f"Cannot balance: reals={len(reals)} fakes={len(fakes)}")
+        rng.shuffle(reals); rng.shuffle(fakes)
+        all_samples = reals[:n] + fakes[:n]
+        log.info("Balanced to %d real + %d fake = %d (from %d)",
+                 n, n, 2 * n, len(reals) + len(fakes))
+
     rng.shuffle(all_samples)
     pivot = int(len(all_samples) * 0.8)
     train, val = all_samples[:pivot], all_samples[pivot:]

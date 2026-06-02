@@ -62,7 +62,7 @@ def train(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     log.info("Device: %s", device)
 
-    train_samples, val_samples = build_dataset(args.dataset, seed=args.seed)
+    train_samples, val_samples = build_dataset(args.dataset, seed=args.seed, balance=args.balance)
     if args.quick:
         train_samples = train_samples[:64]
         val_samples = val_samples[:32]
@@ -118,6 +118,8 @@ def _cli():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--num-workers", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--balance", action="store_true",
+                    help="downsample the majority class so real≈fake (use this for Celeb-DF/FF++)")
     ap.add_argument("--quick", action="store_true", help="tiny subset, single-epoch smoke test")
     ap.add_argument("--out-dir", default="runs/default")
     args = ap.parse_args()
