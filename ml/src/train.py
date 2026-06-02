@@ -111,7 +111,7 @@ def train(args):
 
 def _cli():
     ap = argparse.ArgumentParser(description="Train Pramāṇa deepfake classifier")
-    ap.add_argument("--dataset", default="combined", choices=["stand_in", "ffpp", "celebdf", "combined"])
+    ap.add_argument("--dataset", default="combined", choices=["stand_in", "frames", "ffpp", "celebdf", "combined"])
     ap.add_argument("--backbone", default="mobilenet_v3_small", choices=["mobilenet_v3_small", "efficientnet_b0"])
     ap.add_argument("--epochs", type=int, default=25)
     ap.add_argument("--batch-size", type=int, default=64)

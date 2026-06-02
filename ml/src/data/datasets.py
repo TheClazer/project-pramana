@@ -98,6 +98,23 @@ def discover_iiitcfw(root: Path) -> list[Sample]:
     return samples
 
 
+def discover_frames(root: Path) -> list[Sample]:
+    """Generic extracted-frames layout produced by extract_frames.py:
+        <root>/original/*.jpg     (real, label 0)
+        <root>/manipulated/*.jpg  (fake, label 1)
+    This is where Celeb-DF / FF++ frames land after extraction.
+    """
+    samples: list[Sample] = []
+    if not (root / "original").exists() or not (root / "manipulated").exists():
+        log.warning("frames root %s missing original/ or manipulated/ — skip", root)
+        return samples
+    for p in (root / "original").rglob("*.jpg"):
+        samples.append(Sample(p, 0, "frames"))
+    for p in (root / "manipulated").rglob("*.jpg"):
+        samples.append(Sample(p, 1, "frames"))
+    return samples
+
+
 def discover_standin(_root: Path | None = None) -> list[Sample]:
     """Use the stand-in synthesis when no real datasets are present."""
     from .sample_stand_in import build_or_load_standin
@@ -115,13 +132,16 @@ def build_dataset(
         all_samples = discover_standin()
     elif dataset == "combined":
         all_samples = (
-            discover_faceforensics(root / "faceforensics")
+            discover_frames(root / "frames")
+            + discover_faceforensics(root / "faceforensics")
             + discover_celebdf(root / "celebdf")
             + discover_iiitcfw(root / "iiitcfw")
         )
         if not all_samples:
             log.warning("No real datasets found — falling back to stand-in")
             all_samples = discover_standin()
+    elif dataset == "frames":
+        all_samples = discover_frames(root / "frames")
     elif dataset == "ffpp":
         all_samples = discover_faceforensics(root / "faceforensics")
     elif dataset == "celebdf":
